@@ -15,43 +15,71 @@ explainer = shap.TreeExplainer(model)
 st.markdown("""
     <style>
     .stApp {
-        background-color: #fafafa;
+        background-color: var(--background-color);
     }
     .title {
         font-size: 3em;
-        color: #333333;
         text-align: center;
         font-weight: bold;
         margin-bottom: 0.1em;
+        color: var(--text-color);
     }
     .subtitle {
         font-size: 1.5em;
-        color: #666666;
         text-align: center;
         margin-top: 0;
-        margin-bottom: 1em;
+        margin-bottom: 0.5em;
+        color: var(--text-color);
     }
+    /* Text Elements */
+    p, label, h1, h2, h3 {
+        color: var(--text-color);
+    }
+    /* Button Styling */
     div.stButton > button:first-child {
         background-color: #e74c3c;
-        color: white;
+        color: white; /* Text color */
         height: 50px;
         width: 200px;
         border-radius: 10px;
         border: none;
         font-size: 18px;
         font-weight: bold;
-        margin: 20px auto;
-        display: block;
+        margin: 20px auto;  /* Center horizontally */
+        display: block;      /* Required for margin auto to work */
+        cursor: pointer;
+        transition: background-color 0.3s ease;
     }
-    div.stButton > button:hover {
+
+    /* Hover state */
+    div.stButton > button:first-child:hover {
         background-color: #c0392b;
+        color: white; /* Ensure text remains white */
+    }
+
+    /* Active state (when the button is clicked) */
+    div.stButton > button:first-child:active {
+        background-color: #b03a2e;
+        color: white; /* Ensure text remains white */
+    }
+
+    /* Focus state (when the button is focused) */
+    div.stButton > button:first-child:focus {
+        background-color: #c0392b;
+        color: white; /* Ensure text remains white */
+        outline: none; /* Remove default focus outline */
+    }
+
+    /* Ensure the button text color remains white in all other states */
+    div.stButton > button:first-child:visited {
+        color: white;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<p class="title">Worminator</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Gender Prediction Model </p>', unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; font-size: 0.9em; color: #666666;'>version beta 0.1, made by /u LHB-01 - jojohonB</p>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; font-size: 0.9em; color: #666666;'>version beta 0.1, made by jojohonB</p>", unsafe_allow_html=True)
 st.write("Enter your measurements (in centimeters):")
 
 torso_measurements = [
@@ -218,19 +246,45 @@ if st.button("Worm me!"):
         with col_left:
             st.subheader("Feature Interpretations")
             for feature_name, shap_value in zip(user_df.columns, shap_values[0]):
-                #description of the feature.
+        # Get the full description of the feature
                 if feature_name in ratio_descriptions:
                     full_name = f"{feature_name} ({ratio_descriptions[feature_name]})"
                 else:
                     full_name = feature_name
 
-                #Determine the direction.
+        # Determine the direction
                 direction = "male" if shap_value > 0 else "female"
-                #Basic interpretation.
-                interpretation = f"**{full_name}**: {user_df[feature_name].iloc[0]:.2f}, leaning towards **{direction}** by {abs(shap_value):.2f}"
-                st.markdown(interpretation)
-                if feature_name in interpretation_templates:
-                    st.write(interpretation_templates[feature_name][direction])
+
+                if feature_name == 'stature':
+                # Convert 'stature' from mm to cm
+                    feature_value_cm = user_df[feature_name].iloc[0] / 10  # Convert mm to cm
+            # Basic interpretation
+                    interpretation = f"""
+                    <p style='color: var(--text-color);'>
+                    <strong>{full_name}</strong>: {feature_value_cm:.2f} cm, leaning towards <strong>{direction}</strong> by {abs(shap_value):.2f}
+                    </p>
+                    """
+                    st.markdown(interpretation, unsafe_allow_html=True)
+
+            # Add 'Heighthon' interpretation if stature > 178 cm
+                    if feature_value_cm > 178:
+                        st.markdown("<p style='color: var(--text-color);'>Heighthon</p>", unsafe_allow_html=True)
+                else:
+                # For other features
+                    feature_value = user_df[feature_name].iloc[0]
+                # Basic interpretation
+                    interpretation = f"""
+                    <p style='color: var(--text-color);'>
+                    <strong>{full_name}</strong>: {feature_value:.2f}, leaning towards <strong>{direction}</strong> by {abs(shap_value):.2f}
+                    </p>
+                    """
+                    st.markdown(interpretation, unsafe_allow_html=True)
+
+            # Add detailed interpretation if available
+                    if feature_name in interpretation_templates:
+                        detailed_interpretation = interpretation_templates[feature_name][direction]
+                        detailed_text = f"<p style='color: var(--text-color);'>{detailed_interpretation}</p>"
+                        st.markdown(detailed_text, unsafe_allow_html=True)
 
         with col_right:
             st.subheader("Feature Impact on Prediction")
