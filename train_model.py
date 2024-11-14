@@ -88,7 +88,45 @@ def prepare_training_data(df, ratio_feature_names):
     return X, y
 
 #using xgboost.
-#i used bayesian optimization with hyperopt to get these hyperparameters.
+#i used bayesian optimization with hyperopt to get these hyperparameters (methode below).
+"""
+from hyperopt import fmin, tpe, hp, Trials, STATUS_OK
+def objective(params):
+    params = {
+        'max_depth': int(params['max_depth']),
+        'min_child_weight': params['min_child_weight'],
+        'learning_rate': params['learning_rate'],
+        'n_estimators': int(params['n_estimators']),
+        'reg_alpha': params['reg_alpha'],
+        'reg_lambda': params['reg_lambda'],
+        'eval_metric': 'logloss',
+        'random_state': 42
+    }
+
+    # Initialize the model with given parameters
+    model = XGBClassifier(**params)
+
+    # Use cross-validation to evaluate the model
+    cv_score = cross_val_score(model, X, y, cv=5, scoring='accuracy').mean()
+    
+    # Return the negative of accuracy because Hyperopt minimizes the objective
+    return {'loss': -cv_score, 'status': STATUS_OK}
+
+space = {
+    'max_depth': hp.quniform('max_depth', 3, 10, 1),
+    'min_child_weight': hp.quniform('min_child_weight', 1, 10, 1),
+    'learning_rate': hp.loguniform('learning_rate', np.log(0.01), np.log(0.2)),
+    'n_estimators': hp.quniform('n_estimators', 50, 300, 10),
+    'reg_alpha': hp.uniform('reg_alpha', 0, 1),
+    'reg_lambda': hp.uniform('reg_lambda', 0, 1)
+}
+trials = Trials()
+best = fmin(fn=objective, space=space, algo=tpe.suggest, max_evals=50, trials=trials)
+best['max_depth'] = int(best['max_depth'])
+best['n_estimators'] = int(best['n_estimators'])
+
+print("Best hyperparameters:", best)
+"""
 #changing them will change the models output. 
 def train_model(X, y):
     tuned_hyperparameters = {
